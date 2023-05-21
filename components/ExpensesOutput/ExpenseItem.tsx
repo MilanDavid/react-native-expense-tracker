@@ -1,11 +1,11 @@
 import React from "react";
 import { Pressable, Text, View, StyleSheet } from "react-native";
 import { GlobalStyles } from "../../constants/styles";
-import { getFormattedDate } from "../../util/date";
 import { useNavigation } from "@react-navigation/native";
+import moment from "moment";
 
 const ExpenseItem = ({ title, date, amount, id }) => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const expensePressHandler = () => {
     navigation.navigate("ManagedExpense", { expenseId: id });
   };
@@ -18,7 +18,9 @@ const ExpenseItem = ({ title, date, amount, id }) => {
       <View style={styles.expenseItem}>
         <View>
           <Text style={[styles.title, styles.textBase]}>{title}</Text>
-          <Text style={styles.textBase}>{getFormattedDate(date)}</Text>
+          <Text style={styles.textBase}>
+            {moment.unix(date).format("DD.MM.YYYY")}
+          </Text>
         </View>
         <View style={styles.amountContainer}>
           <Text style={styles.amount}>${amount.toFixed(2)}</Text>
