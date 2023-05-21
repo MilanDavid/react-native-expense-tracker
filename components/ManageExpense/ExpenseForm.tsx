@@ -101,7 +101,7 @@ const ExpenseForm = ({ id, isEditing, navigation }) => {
                 label="Date"
                 textInputConfig={{
                   keyboardType: "decimal-pad",
-                  value: moment(values.date, "DD.MM.YYYY").format("DD.MM.YYYY"),
+                  value: values.date,
                   onChangeText: handleChange("date"),
                 }}
                 error={errors.date}
