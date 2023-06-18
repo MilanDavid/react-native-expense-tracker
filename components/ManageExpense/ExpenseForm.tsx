@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import {
   Keyboard,
   StyleSheet,
@@ -16,9 +16,14 @@ import moment from "moment";
 import DateInput from "./DateInput";
 import Input from "./Input";
 import * as Yup from "yup";
+import { deleteExpense, storeExpense, updateExpense } from "../../util/http";
+import LoadingOverlay from "../UI/LoadingOverlay";
+import ErrorOverlay from "../UI/ErrorOverlay";
 
 const ExpenseForm = ({ id, isEditing, navigation }) => {
   const expensesCtx = useContext(ExpensesContext);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const editExpense = expensesCtx.expenses.find((expense) => expense.id === id);
 
@@ -45,31 +50,63 @@ const ExpenseForm = ({ id, isEditing, navigation }) => {
       .typeError("Invalid input"),
   });
 
-  const submitFormHandler = (values) => {
-    if (isEditing) {
-      expensesCtx.updateExpense(id, {
-        title: values.title,
-        amount: Number(values.amount),
-        date: moment(values.date, "DD.MM.YYYY").unix(),
-      });
-    } else {
-      expensesCtx.addExpense({
-        title: values.title,
-        amount: Number(values.amount),
-        date: moment(values.date, "DD.MM.YYYY").unix(),
-      });
+  const submitFormHandler = async (values) => {
+    setIsLoading(true);
+    try {
+      if (isEditing) {
+        await updateExpense(id, {
+          title: values.title,
+          amount: Number(values.amount),
+          date: moment(values.date, "DD.MM.YYYY").unix(),
+        });
+        expensesCtx.updateExpense(id, {
+          title: values.title,
+          amount: Number(values.amount),
+          date: moment(values.date, "DD.MM.YYYY").unix(),
+        });
+      } else {
+        const id = await storeExpense({
+          title: values.title,
+          amount: Number(values.amount),
+          date: moment(values.date, "DD.MM.YYYY").unix(),
+        });
+        expensesCtx.addExpense({
+          id: id,
+          title: values.title,
+          amount: Number(values.amount),
+          date: moment(values.date, "DD.MM.YYYY").unix(),
+        });
+      }
+      navigation.goBack();
+    } catch (error) {
+      setErrorMessage("Could not update expense!");
+      setIsLoading(false);
     }
-    navigation.goBack();
   };
 
-  const deleteExpenseHandler = () => {
-    expensesCtx.deleteExpense(id);
-    navigation.goBack();
+  const deleteExpenseHandler = async () => {
+    setIsLoading(true);
+    try {
+      await deleteExpense(id);
+      expensesCtx.deleteExpense(id);
+      navigation.goBack();
+    } catch (error) {
+      setErrorMessage("Could not delete expense!");
+      setIsLoading(false);
+    }
   };
 
   const cancelHandler = () => {
     navigation.goBack();
   };
+
+  const handleError = () => {
+    setErrorMessage("");
+  };
+
+  if (isLoading) return <LoadingOverlay />;
+  if (errorMessage && !isLoading)
+    return <ErrorOverlay message={errorMessage} onConfirm={handleError} />;
 
   return (
     <Formik
